@@ -28,10 +28,12 @@ class FakeLLM:
         self.candidates = candidates or []
         self.books = list(books or [])
         self.parse_messages: list[str] = []
+        self.parse_histories: list[list] = []
         self.select_excludes: list[list[str]] = []
 
     def parse_request(self, history, message: str) -> BookRequest:
         self.parse_messages.append(message)
+        self.parse_histories.append(list(history))
         return self.request
 
     def extract_candidates(self, request, results, exclude_titles, limit) -> list[Candidate]:

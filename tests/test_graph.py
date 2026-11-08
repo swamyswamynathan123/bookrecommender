@@ -88,3 +88,23 @@ def test_new_thread_has_no_memory():
     graph, _ = run(llm, search_with_results())
     run(llm, search_with_results(), graph=graph, thread="t2")
     assert llm.select_excludes[1] == []
+
+
+def test_history_trimmed_for_parsing():
+    llm = FakeLLM(STOIC, cands(5), [books("A", "B", "C", "D", "E")] * 3)
+    graph, _ = run(llm, search_with_results())
+    for i in range(5):
+        run(llm, search_with_results(), graph=graph, text=f"more {i}")
+    assert max(len(h) for h in llm.parse_histories) <= 6
+    assert all(len(m.content) <= 2000 for h in llm.parse_histories for m in h)
+
+
+def test_checkpoints_do_not_warn_about_unregistered_types(monkeypatch, caplog):
+    from langgraph.checkpoint.serde import jsonplus
+    monkeypatch.setattr(jsonplus, "_warned_unregistered_types", set())
+    llm = FakeLLM(STOIC, cands(5), [books("A", "B", "C", "D", "E"), books("F")])
+    graph, _ = run(llm, search_with_results())
+    with caplog.at_level("WARNING"):
+        _, state = run(llm, search_with_results(), graph=graph, text="more")
+    assert "unregistered" not in caplog.text.lower()
+    assert "**1. F**" in state["reply"]

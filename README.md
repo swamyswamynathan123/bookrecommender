@@ -47,8 +47,10 @@ whole number of at least 1 stops the app with a message naming it.
 | `MAX_SEARCHES_PER_SESSION` | 20 | Searches each visitor gets per browser session (off-topic messages and errors don't count) |
 | `MAX_TAVILY_CALLS_PER_MESSAGE` | 8 | Tavily calls per message, including one retry when too few books check out |
 | `MAX_INPUT_CHARS` | 500 | Longer messages are cut to this length |
+| `MAX_MESSAGES_PER_SESSION` | 60 | All messages per session, including off-topic ones (caps OpenAI spend) |
+| `MAX_CONVERSATIONS` | 200 | Conversations kept in server memory; the oldest are forgotten beyond this |
 
-The per-session search limit protects your API bill in a proof of concept. It resets when the
+The per-session limits protect your API bill in a proof of concept. It resets when the
 visitor reloads the page, so it isn't a hard cap.
 
 ## Tests

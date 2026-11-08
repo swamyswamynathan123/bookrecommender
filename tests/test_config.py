@@ -40,3 +40,10 @@ def test_empty_limit_uses_default():
 def test_invalid_limit_names_setting(bad):
     with pytest.raises(ConfigError, match="MAX_SEARCHES_PER_SESSION"):
         get_settings(env={**KEYS, "MAX_SEARCHES_PER_SESSION": bad}, secrets={})
+
+
+def test_message_and_conversation_limits():
+    s = get_settings(env={**KEYS, "MAX_MESSAGES_PER_SESSION": "7", "MAX_CONVERSATIONS": "9"}, secrets={})
+    assert (s.max_messages_per_session, s.max_conversations) == (7, 9)
+    d = get_settings(env=KEYS, secrets={})
+    assert (d.max_messages_per_session, d.max_conversations) == (60, 200)

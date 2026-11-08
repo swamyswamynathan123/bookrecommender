@@ -10,6 +10,7 @@ from bookrec import wiring
 from bookrec.config import ConfigError, MissingKeyError
 from bookrec.graph import NODE_LABELS
 from bookrec.render import CONFIG_ERROR_REPLY, ERROR_REPLY, LIMIT_REPLY, MISSING_KEYS_REPLY
+from bookrec.threads import ThreadRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +20,12 @@ st.title("📚 Book Finder")
 
 @st.cache_resource
 def get_app():
-    return wiring.load()
+    graph, settings = wiring.load()
+    return graph, settings, ThreadRegistry(graph.checkpointer, settings.max_conversations)
 
 
 try:
-    graph, settings = get_app()
+    graph, settings, threads = get_app()
 except MissingKeyError:
     st.error(MISSING_KEYS_REPLY)
     st.stop()
@@ -35,9 +37,11 @@ state = st.session_state
 state.setdefault("thread_id", uuid.uuid4().hex)
 state.setdefault("history", [])
 state.setdefault("searches_used", 0)
+state.setdefault("messages_used", 0)
 
 with st.sidebar:
     if st.button("New search"):
+        threads.forget(state.thread_id)
         state.thread_id = uuid.uuid4().hex
         state.history = []
         st.rerun()
@@ -54,8 +58,11 @@ for item in state.history:
 
 
 def answer(text: str) -> str:
-    if state.searches_used >= settings.max_searches_per_session:
+    if (state.searches_used >= settings.max_searches_per_session
+            or state.messages_used >= settings.max_messages_per_session):
         return LIMIT_REPLY
+    state.messages_used += 1
+    threads.touch(state.thread_id)
     config = {"configurable": {"thread_id": state.thread_id}}
     try:
         with st.status("Working…", expanded=True) as status:

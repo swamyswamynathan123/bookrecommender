@@ -31,14 +31,17 @@ def app(monkeypatch):
         settings = settings or Settings(openai_api_key="x", tavily_api_key="y")
         llm, search = fake_parts(raises)
 
+        graph = build_graph(llm, search, settings)
+
         def load():
             if load_error:
                 raise load_error
-            return build_graph(llm, search, settings), settings
+            return graph, settings
 
         monkeypatch.setattr(wiring, "load", load)
         at = AppTest.from_file(APP, default_timeout=30)
         at.run()
+        at.graph = graph
         return at, llm, search
 
     yield make
@@ -106,3 +109,19 @@ def test_new_search_clears_history(app):
     assert chat_text(at)
     at.sidebar.button[0].click().run()
     assert chat_text(at) == []
+
+
+def test_message_cap_includes_off_topic(app):
+    at, llm, _ = app(settings=Settings(openai_api_key="x", tavily_api_key="y", max_messages_per_session=1))
+    at.chat_input[0].set_value("stoicism").run()
+    at.chat_input[0].set_value("what's the weather").run()
+    assert len(llm.parse_messages) == 1 and any(LIMIT_REPLY in t for t in chat_text(at))
+
+
+def test_new_search_deletes_old_thread(app):
+    at, _, _ = app()
+    at.chat_input[0].set_value("stoicism").run()
+    old = at.session_state["thread_id"]
+    assert at.graph.get_state({"configurable": {"thread_id": old}}).values
+    at.sidebar.button[0].click().run()
+    assert not at.graph.get_state({"configurable": {"thread_id": old}}).values

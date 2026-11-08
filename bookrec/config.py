@@ -14,6 +14,8 @@ _LIMITS = {
     "MAX_SEARCHES_PER_SESSION": ("max_searches_per_session", 20),
     "MAX_TAVILY_CALLS_PER_MESSAGE": ("max_tavily_calls_per_message", 8),
     "MAX_INPUT_CHARS": ("max_input_chars", 500),
+    "MAX_MESSAGES_PER_SESSION": ("max_messages_per_session", 60),
+    "MAX_CONVERSATIONS": ("max_conversations", 200),
 }
 
 
@@ -34,6 +36,8 @@ class Settings:
     max_searches_per_session: int = 20
     max_tavily_calls_per_message: int = 8
     max_input_chars: int = 500
+    max_messages_per_session: int = 60
+    max_conversations: int = 200
 
 
 def _streamlit_secrets() -> Mapping[str, str]:

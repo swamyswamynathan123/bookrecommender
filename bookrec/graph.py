@@ -5,6 +5,7 @@ from typing import Annotated, TypedDict
 
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
@@ -25,6 +26,11 @@ NODE_LABELS = {
 
 SEARCH_RESULTS_PER_QUERY = 8
 ENRICH_RESULTS_PER_QUERY = 3
+# Only the most recent messages (truncated) go to the request parser, to bound OpenAI cost.
+HISTORY_MESSAGES = 6
+HISTORY_MESSAGE_CHARS = 2000
+# Our Pydantic models stored in checkpoints, registered so LangGraph deserializes them explicitly.
+CHECKPOINT_TYPES = [("bookrec.models", name) for name in ("BookRequest", "SearchResult", "Book", "Candidate")]
 
 
 class TurnState(TypedDict, total=False):
@@ -65,7 +71,9 @@ def build_graph(llm: BookLLM, search: SearchFn, settings: Settings, checkpointer
 
     def understand(state: TurnState) -> TurnState:
         *history, last = state["messages"]
-        request = llm.parse_request(history, last.content)
+        recent = [m.model_copy(update={"content": str(m.content)[:HISTORY_MESSAGE_CHARS]})
+                  for m in history[-HISTORY_MESSAGES:]]
+        request = llm.parse_request(recent, last.content)
         return {"request": request, "results": [], "candidates_new": [], "books": [],
                 "tavily_calls": 0, "attempts": 0, "reply": "", "did_search": False}
 
@@ -140,7 +148,9 @@ def build_graph(llm: BookLLM, search: SearchFn, settings: Settings, checkpointer
     graph.add_conditional_edges("verify", after_verify, {"retry": "retry", "respond": "respond"})
     graph.add_edge("retry", "search_books")
     graph.add_edge("respond", END)
-    return graph.compile(checkpointer=checkpointer or MemorySaver())
+    if checkpointer is None:
+        checkpointer = MemorySaver(serde=JsonPlusSerializer(allowed_msgpack_modules=CHECKPOINT_TYPES))
+    return graph.compile(checkpointer=checkpointer)
 
 
 def _merge(existing: list[SearchResult], new: list[SearchResult]) -> list[SearchResult]:
