@@ -5,14 +5,21 @@ A chat app that recommends real books on any topic. Type a topic like "Stoic phi
 and a review excerpt credited to the site it came from. Keep chatting to refine the results
 ("more modern", "under 200 pages", "more like the second one").
 
-Built with Python, OpenAI, LangGraph, Tavily web search and Streamlit, with optional LangSmith tracing.
+Built with Python, OpenAI, LangGraph, Tavily web search and Streamlit, with book data from Open Library
+(and optionally Google Books) and optional LangSmith tracing.
 
 ## What is fact-checked
 
 Every book, rating, review excerpt, page count and publication year shown has to appear in the
 Tavily search results, next to that book's title (so a list page can't lend one book's rating to
 another). If it doesn't, it's dropped or shown as "Rating not found". Ratings and reviews link to
-the page they came from. The
+the page they came from.
+
+After the web check, each book is looked up in Open Library (and Google Books if you add a key).
+A catalog record only counts if its title and author match. Catalogs add a cover, links, the page
+count and the rating when the web search didn't find them (labeled with the source and number of
+ratings), and the earliest publication year. Catalog ratings come from those sites' own, smaller
+reader communities, so a web-found Goodreads rating is always preferred. The
 description and the "why it fits" line are written by the AI and are not fact-checked.
 Reviews may come from readers (Goodreads, Amazon, Reddit) or critics (Kirkus, blogs); each one
 names and links its source.
@@ -51,6 +58,8 @@ whole number of at least 1 stops the app with a message naming it.
 | `MAX_INPUT_CHARS` | 500 | Longer messages are cut to this length |
 | `MAX_MESSAGES_PER_SESSION` | 60 | All messages per session, including off-topic ones (caps OpenAI spend) |
 | `MAX_CONVERSATIONS` | 200 | Conversations kept in server memory; the oldest are forgotten beyond this |
+| `MIN_CATALOG_RATINGS` | 10 | A Google Books / Open Library rating is shown only if at least this many people rated the book |
+| `GOOGLE_BOOKS_API_KEY` | (optional) | Adds Google Books data. Get a free key: Google Cloud Console → enable "Books API" → Credentials → API key. Without it, only Open Library is used |
 | `LANGSMITH_TRACING` | false | `true` sends a trace of every message to LangSmith |
 | `LANGSMITH_API_KEY` | (required if tracing) | Your LangSmith key |
 | `LANGSMITH_PROJECT` | `book-finder` | LangSmith project the traces go to |

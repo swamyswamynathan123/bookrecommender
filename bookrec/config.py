@@ -20,6 +20,7 @@ _LIMITS = {
     "MAX_INPUT_CHARS": ("max_input_chars", 500),
     "MAX_MESSAGES_PER_SESSION": ("max_messages_per_session", 60),
     "MAX_CONVERSATIONS": ("max_conversations", 200),
+    "MIN_CATALOG_RATINGS": ("min_catalog_ratings", 10),
 }
 
 
@@ -42,10 +43,12 @@ class Settings:
     max_input_chars: int = 500
     max_messages_per_session: int = 60
     max_conversations: int = 200
+    min_catalog_ratings: int = 10
     langsmith_tracing: bool = False
     langsmith_api_key: str = ""
     langsmith_project: str = DEFAULT_LANGSMITH_PROJECT
     langsmith_endpoint: str = ""
+    google_books_api_key: str = ""
 
 
 def _streamlit_secrets() -> Mapping[str, str]:
@@ -107,5 +110,6 @@ def get_settings(
         langsmith_api_key=lookup("LANGSMITH_API_KEY"),
         langsmith_project=lookup("LANGSMITH_PROJECT") or DEFAULT_LANGSMITH_PROJECT,
         langsmith_endpoint=lookup("LANGSMITH_ENDPOINT"),
+        google_books_api_key=lookup("GOOGLE_BOOKS_API_KEY"),
         **limits,
     )

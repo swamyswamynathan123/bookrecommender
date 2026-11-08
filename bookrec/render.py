@@ -15,13 +15,16 @@ _EXCERPT_STRIP = ' "“”'
 def format_book_card(book: Book, index: int) -> str:
     if book.rating is not None:
         meta = f"★ {book.rating:g} on [{book.rating_source}]({book.rating_url})"
+        if book.ratings_count:
+            meta += f" · {book.ratings_count:,} ratings"
     else:
         meta = "Rating not found"
     if book.page_count:
         meta += f" · {book.page_count} pages"
     if book.year:
         meta += f" · {book.year}"
-    lines = [
+    lines = [f"![Cover of {book.title}]({book.cover_url})", ""] if book.cover_url else []
+    lines += [
         f"**{index}. {book.title}** — {book.author}",
         "",
         meta,
@@ -33,6 +36,13 @@ def format_book_card(book: Book, index: int) -> str:
     if book.review_excerpt:
         excerpt = book.review_excerpt.strip(_EXCERPT_STRIP)
         lines += ["", f"> “{excerpt}” — [{book.review_source_name}]({book.review_url})"]
+    links = []
+    if book.google_books_url:
+        links.append(f"[Preview on Google Books]({book.google_books_url})")
+    if book.open_library_url:
+        links.append(f"[View on Open Library]({book.open_library_url})")
+    if links:
+        lines += ["", " · ".join(links)]
     return "\n".join(lines)
 
 

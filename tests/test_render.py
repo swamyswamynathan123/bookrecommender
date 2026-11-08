@@ -37,3 +37,12 @@ def test_reply_notes_short_list():
 
 def test_reply_full_list_has_no_note():
     assert "could only" not in format_reply([book(title=t) for t in "ABCDE"], 5)
+
+
+def test_card_with_catalog_data():
+    card = format_book_card(book(rating=4.8, rating_source="Open Library", rating_url="https://ol",
+                                 ratings_count=6, cover_url="https://cover.jpg",
+                                 google_books_url="https://gb", open_library_url="https://ol"), 1)
+    assert "![Cover of Meditations](https://cover.jpg)" in card
+    assert "★ 4.8 on [Open Library](https://ol) · 6 ratings" in card
+    assert "[Preview on Google Books](https://gb) · [View on Open Library](https://ol)" in card

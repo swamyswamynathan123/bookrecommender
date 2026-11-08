@@ -108,3 +108,13 @@ def test_checkpoints_do_not_warn_about_unregistered_types(monkeypatch, caplog):
         _, state = run(llm, search_with_results(), graph=graph, text="more")
     assert "unregistered" not in caplog.text.lower()
     assert "**1. F**" in state["reply"]
+
+
+def test_graph_applies_catalog_enricher():
+    def enrich(found):
+        return [b.model_copy(update={"page_count": 123, "cover_url": "https://c"}) for b in found]
+
+    graph = build_graph(FakeLLM(STOIC, cands(5), [books("A", "B", "C", "D", "E")]), search_with_results(),
+                        SETTINGS, enrich=enrich)
+    _, state = run(None, None, graph=graph)
+    assert "123 pages" in state["reply"] and "![Cover of A](https://c)" in state["reply"]

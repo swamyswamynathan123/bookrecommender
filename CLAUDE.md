@@ -19,6 +19,7 @@ Community Cloud.
   When verify keeps fewer than `max_books` books, it may retry once (via `retry`, back to search_books) if 2 or more Tavily calls are left.
   An off-topic message goes from understand straight to respond.
 - `bookrec/verify.py`: grounding checks against Tavily result text (pure functions). Facts must appear near the book's title in a result.
+- `bookrec/catalog.py`: Open Library / Google Books lookups and `enrich_from_catalogs` (fills gaps on verified books; title+author must match). Runs inside `verify_books`, after grounding and before hard constraints.
 - `bookrec/llm.py`: the `BookLLM` protocol, prompts, and `OpenAIBookLLM` (structured output).
 - `bookrec/search.py`: the Tavily adapter and `run_queries` (enforces the per-message call budget).
 - `bookrec/render.py`: all user-facing copy and the book-card markdown.
@@ -38,6 +39,8 @@ Community Cloud.
   only for manual smoke tests with a filled-in `.env`.
 - Never commit `.env` or `.streamlit/secrets.toml`, and never print key values.
 - New Pydantic types stored in graph state must be added to `CHECKPOINT_TYPES` in `graph.py`.
+- Catalog-only Book fields (`cover_url`, `ratings_count`, `google_books_url`, `open_library_url`) are cleared in `verify.py` and set only by `catalog.py`, never from the LLM.
+- Keys never go in URLs (Google Books key is sent as the `X-Goog-Api-Key` header) so they can't leak into logs or traces.
 - Tracing is optional: everything must work with `LANGSMITH_TRACING` off and no LangSmith key.
 - Visitors never see tracebacks. User-facing text lives in `render.py`.
 - The OpenAI SDK sends Pydantic models as strict JSON schemas. Keep model fields simple

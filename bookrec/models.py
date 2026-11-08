@@ -38,3 +38,8 @@ class Book(BaseModel):
     review_url: str | None = None
     page_count: int | None = None
     year: int | None = None
+    # Filled only from book catalogs (Google Books / Open Library), never by the LLM
+    ratings_count: int | None = None
+    cover_url: str | None = None
+    google_books_url: str | None = None
+    open_library_url: str | None = None

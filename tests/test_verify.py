@@ -180,3 +180,22 @@ def test_author_page_average_not_used_for_book():
                         content=f"How to Be a Stoic is his best known book.{far} Average rating: 3.98")]
     [kept] = verify([book(title="How To Be A Stoic", rating=3.98)], res)
     assert kept.rating is None
+
+
+def test_catalog_fields_from_llm_are_cleared():
+    [kept] = verify([book(cover_url="https://fake", ratings_count=999, google_books_url="https://g",
+                          open_library_url="https://o")])
+    assert (kept.cover_url, kept.ratings_count, kept.google_books_url, kept.open_library_url) == (None,) * 4
+
+
+def test_enrich_runs_before_hard_constraints():
+    req = BookRequest(is_book_request=True, topic="stoicism", max_pages=200)
+    calls = []
+
+    def enrich(books):
+        calls.append([b.title for b in books])
+        return [b.model_copy(update={"page_count": 150}) if b.title == "Meditations" else b for b in books]
+
+    kept = verify_books([book(), book(title="Letters")], results(f"Meditations Letters {EXCERPT}"), req,
+                        set(), max_books=5, enrich=enrich)
+    assert [b.title for b in kept] == ["Meditations"] and calls == [["Meditations", "Letters"]]

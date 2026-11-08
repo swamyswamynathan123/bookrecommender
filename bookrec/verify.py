@@ -5,6 +5,7 @@ result *near the book's title*, so a list page can't lend one book's numbers to 
 """
 
 import re
+from collections.abc import Callable
 from urllib.parse import urlparse
 
 from bookrec.models import Book, BookRequest, SearchResult
@@ -106,6 +107,9 @@ def _number_backed(n: int, windows: list[str]) -> bool:
     return any(re.search(rf"(?<!\d){n}(?!\d)", text) for text in windows)
 
 
+_CATALOG_ONLY = dict(ratings_count=None, cover_url=None, google_books_url=None, open_library_url=None)
+
+
 def verify_books(
     books: list[Book],
     results: list[SearchResult],
@@ -113,17 +117,21 @@ def verify_books(
     exclude_titles: set[str],
     max_books: int,
     already: list[Book] = [],
+    enrich: Callable[[list[Book]], list[Book]] | None = None,
 ) -> list[Book]:
+    """Ground books against search results, optionally enrich them from catalogs, then apply
+    hard constraints (so catalog page counts and years can satisfy them)."""
     url_map = {r.url: r for r in results}
     seen = set(exclude_titles) | {normalize_title(b.title) for b in already}
-    kept: list[Book] = []
+    grounded: list[Book] = []
 
     for book in books:
         key = normalize_title(book.title)
         source = url_map.get(book.source_url)
         if not key or key in seen or not source or not _title_windows(key, source):
             continue
-        updates: dict = {}
+        # Catalog fields are only ever filled by the catalog step, never trusted from the LLM
+        updates: dict = dict(_CATALOG_ONLY)
 
         rating_src = url_map.get(book.rating_url or "")
         rating_windows = _title_windows(key, rating_src) if rating_src else []
@@ -147,15 +155,21 @@ def verify_books(
         if book.year is not None and not _number_backed(book.year, windows):
             updates["year"] = None
 
-        book = book.model_copy(update=updates)
-        if request.max_pages and (book.page_count is None or book.page_count > request.max_pages):
-            continue
-        if request.min_year and (book.year is None or book.year < request.min_year):
-            continue
-        if request.max_year and (book.year is None or book.year > request.max_year):
-            continue
-
         seen.add(key)
-        kept.append(book)
+        grounded.append(book.model_copy(update=updates))
 
+    if enrich:
+        grounded = enrich(grounded)
+
+    kept = [b for b in grounded if _meets_constraints(b, request)]
     return (list(already) + kept)[:max_books]
+
+
+def _meets_constraints(book: Book, request: BookRequest) -> bool:
+    if request.max_pages and (book.page_count is None or book.page_count > request.max_pages):
+        return False
+    if request.min_year and (book.year is None or book.year < request.min_year):
+        return False
+    if request.max_year and (book.year is None or book.year > request.max_year):
+        return False
+    return True

@@ -1,6 +1,7 @@
 """LangGraph workflow: one invocation per visitor message."""
 
 import operator
+from collections.abc import Callable
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import AIMessage
@@ -57,7 +58,9 @@ def _constraint_words(request: BookRequest) -> str:
     return (" " + " ".join(words)) if words else ""
 
 
-def build_graph(llm: BookLLM, search: SearchFn, settings: Settings, checkpointer=None):
+def build_graph(llm: BookLLM, search: SearchFn, settings: Settings, checkpointer=None,
+                enrich: Callable[[list[Book]], list[Book]] | None = None):
+    catalog_enrich = enrich  # the 'enrich' node below shadows this name
     budget = settings.max_tavily_calls_per_message
     n_books = settings.max_books
 
@@ -110,7 +113,7 @@ def build_graph(llm: BookLLM, search: SearchFn, settings: Settings, checkpointer
     def verify(state: TurnState) -> TurnState:
         kept = verify_books(state.get("candidates_new", []), state.get("results", []), state["request"],
                             set(state.get("shown_titles", [])), max_books=n_books,
-                            already=state.get("books", []))
+                            already=state.get("books", []), enrich=catalog_enrich)
         return {"books": kept, "candidates_new": []}
 
     def after_verify(state: TurnState) -> str:

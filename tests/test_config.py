@@ -70,3 +70,13 @@ def test_langsmith_tracing_without_key_is_error():
 def test_langsmith_tracing_invalid_value_is_error():
     with pytest.raises(ConfigError, match="LANGSMITH_TRACING"):
         get_settings(env={**KEYS, "LANGSMITH_TRACING": "maybe"}, secrets={})
+
+
+def test_google_books_key_optional():
+    assert get_settings(env=KEYS, secrets={}).google_books_api_key == ""
+    assert get_settings(env={**KEYS, "GOOGLE_BOOKS_API_KEY": "g"}, secrets={}).google_books_api_key == "g"
+
+
+def test_min_catalog_ratings_setting():
+    assert get_settings(env=KEYS, secrets={}).min_catalog_ratings == 10
+    assert get_settings(env={**KEYS, "MIN_CATALOG_RATINGS": "3"}, secrets={}).min_catalog_ratings == 3
