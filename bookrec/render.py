@@ -5,7 +5,7 @@ from bookrec.models import Book
 OFF_TOPIC_REPLY = "I can help you find books. Try a topic like “Stoic philosophy” or “cozy mysteries”."
 NO_RESULTS_REPLY = "I couldn't find books I could confirm for that. Try a broader or different topic."
 ERROR_REPLY = "Something went wrong while searching. Please try again in a moment."
-LIMIT_REPLY = "You've reached the search limit for this session. Click “New search” in the sidebar or come back later."
+LIMIT_REPLY = "You've reached the search limit for this session. Please come back later."
 MISSING_KEYS_REPLY = "The app isn't configured yet: API keys are missing. See the README."
 CONFIG_ERROR_REPLY = "The app's settings are invalid: {details}. See the README."
 
@@ -13,7 +13,10 @@ _EXCERPT_STRIP = ' "“”'
 
 
 def format_book_card(book: Book, index: int) -> str:
-    meta = f"★ {book.rating:g} on {book.rating_source}" if book.rating is not None else "Rating not found"
+    if book.rating is not None:
+        meta = f"★ {book.rating:g} on [{book.rating_source}]({book.rating_url})"
+    else:
+        meta = "Rating not found"
     if book.page_count:
         meta += f" · {book.page_count} pages"
     if book.year:
