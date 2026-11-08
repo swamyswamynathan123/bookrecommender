@@ -1,6 +1,6 @@
 """Test doubles for the LLM and web search. Tests never call real APIs."""
 
-from bookrec.models import SearchResult
+from bookrec.models import Book, BookRequest, Candidate, SearchResult
 
 
 class FakeSearch:
@@ -17,3 +17,26 @@ class FakeSearch:
             if key in query:
                 return list(results)
         return []
+
+
+class FakeLLM:
+    """Scripted BookLLM. `books` holds one list per select_books call, consumed in order."""
+
+    def __init__(self, request: BookRequest, candidates: list[Candidate] | None = None,
+                 books: list[list[Book]] | None = None):
+        self.request = request
+        self.candidates = candidates or []
+        self.books = list(books or [])
+        self.parse_messages: list[str] = []
+        self.select_excludes: list[list[str]] = []
+
+    def parse_request(self, history, message: str) -> BookRequest:
+        self.parse_messages.append(message)
+        return self.request
+
+    def extract_candidates(self, request, results, exclude_titles, limit) -> list[Candidate]:
+        return self.candidates[:limit]
+
+    def select_books(self, request, results, exclude_titles, count) -> list[Book]:
+        self.select_excludes.append(list(exclude_titles))
+        return self.books.pop(0)[:count] if self.books else []
