@@ -1,0 +1,3 @@
+[server]
+# Skip the first-run email prompt so start.bat opens the app directly
+showEmailPrompt = false
