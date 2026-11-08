@@ -31,8 +31,10 @@ PARSE_SYSTEM = """You turn a visitor's chat message into a structured book searc
 - On a refinement ("shorter ones", "more modern", "more like the second one"), carry the previous
   topic forward from the conversation and add the new constraints.
 - Resolve references like "the second one" to the actual book title from the conversation (like_title).
-- Hard constraints go in max_pages / min_year / max_year. Everything else ("practical",
-  "beginner-friendly") goes in soft_constraints."""
+- Only explicit numbers the visitor gave become hard constraints in max_pages / min_year /
+  max_year ("under 200 pages", "published after 2010"). Vague words such as "modern", "recent",
+  "short", "classic", "practical" or "beginner-friendly" go in soft_constraints, never in
+  the year or page fields."""
 
 
 def format_results(results: list[SearchResult], max_chars_each: int = 1500) -> str:

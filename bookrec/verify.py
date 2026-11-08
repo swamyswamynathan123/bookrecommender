@@ -17,7 +17,7 @@ TITLE_WINDOW_CHARS = 150
 _QUOTES = str.maketrans({"“": '"', "”": '"', "„": '"', "‘": "'", "’": "'"})
 _TITLE_CUTS = re.compile(r":|\(| - | — | – | by ")
 _LEADING_ARTICLE = re.compile(r"^(the|a|an) ")
-_RATING_AFTER = re.compile(r"\s*(/\s*5(?!\d)|out of 5(?!\d)|of 5(?!\d)|stars?\b|avg|average|rating)")
+_RATING_AFTER = re.compile(r"\s*(/\s*5(?!\d)|out of 5(?!\d)|of 5(?!\d)|stars?\b|avg|average|rating|[\d,]+\s*ratings)")
 _RATING_BEFORE = re.compile(r"(rated|rating|avg|average|score|scored)\W{0,6}$")
 _OTHER_SCALE = re.compile(r"\s*(/\s*|out of |of )(?!5(?!\d))\d")
 _PAGES_AFTER = re.compile(r"\s*(pages|page|pp)\b")
@@ -45,8 +45,13 @@ def _domain(url: str) -> str:
 
 
 def _title_windows(key: str, result: SearchResult) -> list[str]:
-    """Text around each mention of the title in a result (empty if it never mentions it)."""
+    """Text around each mention of the title in a result (empty if it never mentions it).
+
+    A page whose own title starts with the book's title is about that book, so all of it counts.
+    """
     text = normalize_text(f"{result.title} {result.content}")
+    if normalize_title(result.title).startswith(key):
+        return [text]
     return [
         text[max(0, m.start() - TITLE_WINDOW_CHARS): m.end() + TITLE_WINDOW_CHARS]
         for m in re.finditer(rf"(?<!\w){re.escape(key)}(?!\w)", text)

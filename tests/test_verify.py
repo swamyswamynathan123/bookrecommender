@@ -159,3 +159,24 @@ def test_merges_already_and_caps_at_max_books():
     kept = verify(new, results(content), max_books=5, already=already)
     assert [b.title for b in kept] == names[:5]
     assert len(verify(new, results(content), max_books=2)) == 2
+
+
+def test_goodreads_rating_followed_by_ratings_count():
+    assert rating_is_backed(4.27, "### community reviews\n\n4.27\n\n386,001 ratings22,899 reviews")
+    assert not rating_is_backed(4.27, "4.27\n\nUS$ 19.44")
+
+
+def test_book_page_title_makes_whole_page_about_the_book():
+    far = " filler" * 60
+    res = [SearchResult(url=SRC, title="How To Be A Stoic - Massimo Pigliucci: 9781846045073 - AbeBooks",
+                        content=f"How to Be a Stoic. Buy new.{far} Customer rating 4.03 out of 5 stars")]
+    [kept] = verify([book(title="How To Be A Stoic: Ancient Wisdom for Modern Living", rating=4.03)], res)
+    assert kept.rating == 4.03
+
+
+def test_author_page_average_not_used_for_book():
+    far = " filler" * 60
+    res = [SearchResult(url=SRC, title="Massimo Pigliucci (Author of How to Be a Stoic)",
+                        content=f"How to Be a Stoic is his best known book.{far} Average rating: 3.98")]
+    [kept] = verify([book(title="How To Be A Stoic", rating=3.98)], res)
+    assert kept.rating is None

@@ -14,3 +14,8 @@ def test_select_prompt_mentions_exclusions_and_rules():
     p = select_prompt(BookRequest(is_book_request=True, topic="stoicism", max_pages=200), [RES],
                       ["Meditations"], 5)
     assert "Meditations" in p and "verbatim" in p and "200" in p and "stoicism" in p
+
+
+def test_parse_prompt_keeps_vague_words_soft():
+    from bookrec.llm import PARSE_SYSTEM
+    assert "modern" in PARSE_SYSTEM and "explicit" in PARSE_SYSTEM
