@@ -19,7 +19,7 @@ def fake_parts(raises=None):
     books = [Book(title=t, author="A", description="d", why_it_fits="w", source_url=SRC) for t in "ABCDE"]
     llm = FakeLLM(BookRequest(is_book_request=True, topic="stoicism"),
                   [Candidate(title=t, author="A") for t in "ABCDE"], [books] * 10)
-    hit = [SearchResult(url=SRC, title="t", content="Stoic books")]
+    hit = [SearchResult(url=SRC, title="t", content="Stoic books: A, B, C, D, E.")]
     search = FakeSearch({"best books about": hit, "recommendations list": hit}, raises=raises)
     return llm, search
 

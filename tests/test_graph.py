@@ -24,7 +24,7 @@ def cands(n: int) -> list[Candidate]:
 
 
 def search_with_results() -> FakeSearch:
-    hit = [SearchResult(url=SRC, title="Best Stoic books", content="A list of Stoic books")]
+    hit = [SearchResult(url=SRC, title="Best Stoic books", content="Stoic books: A, B, C, D, E, F, Meditations.")]
     return FakeSearch({"best books about": hit, "recommendations list": hit})
 
 
