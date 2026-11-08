@@ -48,5 +48,6 @@ Community Cloud.
 
 ## Docs
 
-- Design: `docs/superpowers/specs/2026-11-08-book-recommender-design.md`
+- As-built design (keep it current when behaviour changes): `docs/DESIGN.md`
+- Original design: `docs/superpowers/specs/2026-11-08-book-recommender-design.md`
 - Plan: `docs/superpowers/plans/2026-11-08-book-recommender.md`

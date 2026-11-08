@@ -8,6 +8,8 @@ and a review excerpt credited to the site it came from. Keep chatting to refine 
 Built with Python, OpenAI, LangGraph, Tavily web search and Streamlit, with book data from Open Library
 (and optionally Google Books) and optional LangSmith tracing.
 
+How it works inside, as built: [docs/DESIGN.md](docs/DESIGN.md).
+
 ## What is fact-checked
 
 Every book, rating, review excerpt, page count and publication year shown has to appear in the
