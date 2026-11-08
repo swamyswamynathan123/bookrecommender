@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 
 DEFAULT_MODEL = "gpt-4.1-mini"
+DEFAULT_LANGSMITH_PROJECT = "book-finder"
+
+_TRUE = {"true", "1", "yes", "on"}
+_FALSE = {"false", "0", "no", "off"}
 
 # Env/secret name -> (Settings field, default)
 _LIMITS = {
@@ -38,6 +42,10 @@ class Settings:
     max_input_chars: int = 500
     max_messages_per_session: int = 60
     max_conversations: int = 200
+    langsmith_tracing: bool = False
+    langsmith_api_key: str = ""
+    langsmith_project: str = DEFAULT_LANGSMITH_PROJECT
+    langsmith_endpoint: str = ""
 
 
 def _streamlit_secrets() -> Mapping[str, str]:
@@ -84,9 +92,20 @@ def get_settings(
             raise ConfigError(f"{name} must be a whole number >= 1 (got {raw!r})")
         limits[field] = value
 
+    raw_tracing = lookup("LANGSMITH_TRACING").lower()
+    if raw_tracing and raw_tracing not in _TRUE | _FALSE:
+        raise ConfigError(f"LANGSMITH_TRACING must be true or false (got {raw_tracing!r})")
+    tracing = raw_tracing in _TRUE
+    if tracing and not lookup("LANGSMITH_API_KEY"):
+        raise ConfigError("LANGSMITH_TRACING is true but LANGSMITH_API_KEY is missing")
+
     return Settings(
         openai_api_key=lookup("OPENAI_API_KEY"),
         tavily_api_key=lookup("TAVILY_API_KEY"),
         openai_model=lookup("OPENAI_MODEL") or DEFAULT_MODEL,
+        langsmith_tracing=tracing,
+        langsmith_api_key=lookup("LANGSMITH_API_KEY"),
+        langsmith_project=lookup("LANGSMITH_PROJECT") or DEFAULT_LANGSMITH_PROJECT,
+        langsmith_endpoint=lookup("LANGSMITH_ENDPOINT"),
         **limits,
     )

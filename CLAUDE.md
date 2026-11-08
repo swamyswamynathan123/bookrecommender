@@ -18,23 +18,27 @@ Community Cloud.
   The nodes run understand → search_books → enrich → select_and_write → verify, then respond.
   When verify keeps fewer than `max_books` books, it may retry once (via `retry`, back to search_books) if 2 or more Tavily calls are left.
   An off-topic message goes from understand straight to respond.
-- `bookrec/verify.py`: grounding checks against Tavily result text (pure functions).
+- `bookrec/verify.py`: grounding checks against Tavily result text (pure functions). Facts must appear near the book's title in a result.
 - `bookrec/llm.py`: the `BookLLM` protocol, prompts, and `OpenAIBookLLM` (structured output).
 - `bookrec/search.py`: the Tavily adapter and `run_queries` (enforces the per-message call budget).
 - `bookrec/render.py`: all user-facing copy and the book-card markdown.
 - `bookrec/models.py`: Pydantic models shared by everything above.
-- `bookrec/wiring.py`: `load()` builds the real graph from settings.
+- `bookrec/wiring.py`: `load()` builds the real graph from settings and calls `configure_tracing`.
+- `bookrec/telemetry.py`: exports LangSmith settings to env vars (needed when they come from Streamlit secrets).
+- `bookrec/threads.py`: `ThreadRegistry` deletes old conversations from the shared in-memory checkpointer.
 
 ## Rules not to break
 
 - Everything shown as fact (book, rating, review excerpt, page count, year) must pass `verify.py`.
-  Never relax verification to "make results look fuller". Description, "why it fits" and soft
+  Never relax verification to "make results look fuller". Source names shown come from URL domains, not LLM text. Description, "why it fits" and soft
   preferences may come from the LLM.
 - Every limit lives in `Settings` (`config.py`). Never hard-code one. A new setting also goes into
   `.env.example`, `.streamlit/secrets.toml.example` and the README settings table.
 - Tests never call OpenAI or Tavily; use `tests/fakes.py` (`FakeLLM`, `FakeSearch`). Real APIs are
   only for manual smoke tests with a filled-in `.env`.
 - Never commit `.env` or `.streamlit/secrets.toml`, and never print key values.
+- New Pydantic types stored in graph state must be added to `CHECKPOINT_TYPES` in `graph.py`.
+- Tracing is optional: everything must work with `LANGSMITH_TRACING` off and no LangSmith key.
 - Visitors never see tracebacks. User-facing text lives in `render.py`.
 - The OpenAI SDK sends Pydantic models as strict JSON schemas. Keep model fields simple
   (str, int, float, bool, lists, Optional) so that conversion keeps working.

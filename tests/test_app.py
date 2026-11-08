@@ -125,3 +125,19 @@ def test_new_search_deletes_old_thread(app):
     assert at.graph.get_state({"configurable": {"thread_id": old}}).values
     at.sidebar.button[0].click().run()
     assert not at.graph.get_state({"configurable": {"thread_id": old}}).values
+
+
+def test_runs_tagged_with_session_for_tracing(app, monkeypatch):
+    at, _, _ = app()
+    seen = []
+    real_stream = type(at.graph).stream
+
+    def spy(self, inp, config=None, **kw):
+        seen.append(config)
+        return real_stream(self, inp, config, **kw)
+
+    monkeypatch.setattr(type(at.graph), "stream", spy)
+    at.chat_input[0].set_value("stoicism").run()
+    tid = at.session_state["thread_id"]
+    assert seen and seen[0]["metadata"]["session_id"] == tid
+    assert seen[0]["run_name"] == "book_finder_turn"

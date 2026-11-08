@@ -5,12 +5,14 @@ A chat app that recommends real books on any topic. Type a topic like "Stoic phi
 and a review excerpt credited to the site it came from. Keep chatting to refine the results
 ("more modern", "under 200 pages", "more like the second one").
 
-Built with Python, OpenAI, LangGraph, Tavily web search and Streamlit.
+Built with Python, OpenAI, LangGraph, Tavily web search and Streamlit, with optional LangSmith tracing.
 
 ## What is fact-checked
 
 Every book, rating, review excerpt, page count and publication year shown has to appear in the
-Tavily search results. If it doesn't, it's dropped or shown as "Rating not found". The
+Tavily search results, next to that book's title (so a list page can't lend one book's rating to
+another). If it doesn't, it's dropped or shown as "Rating not found". Ratings and reviews link to
+the page they came from. The
 description and the "why it fits" line are written by the AI and are not fact-checked.
 Reviews may come from readers (Goodreads, Amazon, Reddit) or critics (Kirkus, blogs); each one
 names and links its source.
@@ -49,9 +51,24 @@ whole number of at least 1 stops the app with a message naming it.
 | `MAX_INPUT_CHARS` | 500 | Longer messages are cut to this length |
 | `MAX_MESSAGES_PER_SESSION` | 60 | All messages per session, including off-topic ones (caps OpenAI spend) |
 | `MAX_CONVERSATIONS` | 200 | Conversations kept in server memory; the oldest are forgotten beyond this |
+| `LANGSMITH_TRACING` | false | `true` sends a trace of every message to LangSmith |
+| `LANGSMITH_API_KEY` | (required if tracing) | Your LangSmith key |
+| `LANGSMITH_PROJECT` | `book-finder` | LangSmith project the traces go to |
+| `LANGSMITH_ENDPOINT` | (LangSmith default) | Only for non-default regions, e.g. `https://eu.api.smith.langchain.com` |
 
-The per-session limits protect your API bill in a proof of concept. It resets when the
-visitor reloads the page, so it isn't a hard cap.
+The per-session limits protect your API bill in a proof of concept. They reset when the
+visitor reloads the page, so they aren't a hard cap.
+
+## Telemetry (LangSmith)
+
+With `LANGSMITH_TRACING=true`, each visitor message becomes one trace (`book_finder_turn`) in your
+LangSmith project. A trace shows every step (understand, search, read reviews, pick, check, and
+the retry if one happens), each OpenAI call with its prompt, tokens and timing, and each Tavily
+query (`tavily_search`) with its results. Traces from one conversation share a `session_id`, so
+LangSmith groups them into a thread.
+
+**Privacy:** everything visitors type, and the search results, is stored in your LangSmith account.
+Mention this to people before sharing a public link.
 
 ## Tests
 

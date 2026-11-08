@@ -47,3 +47,26 @@ def test_message_and_conversation_limits():
     assert (s.max_messages_per_session, s.max_conversations) == (7, 9)
     d = get_settings(env=KEYS, secrets={})
     assert (d.max_messages_per_session, d.max_conversations) == (60, 200)
+
+
+def test_langsmith_defaults_off():
+    s = get_settings(env=KEYS, secrets={})
+    assert (s.langsmith_tracing, s.langsmith_api_key, s.langsmith_project, s.langsmith_endpoint) == (
+        False, "", "book-finder", "")
+
+
+def test_langsmith_settings_read():
+    s = get_settings(env={**KEYS, "LANGSMITH_TRACING": "True", "LANGSMITH_API_KEY": "ls",
+                          "LANGSMITH_PROJECT": "p", "LANGSMITH_ENDPOINT": "https://eu"}, secrets={})
+    assert (s.langsmith_tracing, s.langsmith_api_key, s.langsmith_project, s.langsmith_endpoint) == (
+        True, "ls", "p", "https://eu")
+
+
+def test_langsmith_tracing_without_key_is_error():
+    with pytest.raises(ConfigError, match="LANGSMITH_API_KEY"):
+        get_settings(env={**KEYS, "LANGSMITH_TRACING": "true"}, secrets={})
+
+
+def test_langsmith_tracing_invalid_value_is_error():
+    with pytest.raises(ConfigError, match="LANGSMITH_TRACING"):
+        get_settings(env={**KEYS, "LANGSMITH_TRACING": "maybe"}, secrets={})

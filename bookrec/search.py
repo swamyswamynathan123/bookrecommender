@@ -8,10 +8,13 @@ SearchFn = Callable[[str, int], list[SearchResult]]
 
 
 def make_tavily_search(api_key: str) -> SearchFn:
+    from langsmith import traceable
     from tavily import TavilyClient
 
     client = TavilyClient(api_key=api_key)
 
+    # Shows each Tavily query and its results inside the LangSmith trace (no-op when tracing is off)
+    @traceable(run_type="tool", name="tavily_search")
     def search(query: str, max_results: int) -> list[SearchResult]:
         response = client.search(query, max_results=max_results, search_depth="basic")
         return [

@@ -63,7 +63,10 @@ def answer(text: str) -> str:
         return LIMIT_REPLY
     state.messages_used += 1
     threads.touch(state.thread_id)
-    config = {"configurable": {"thread_id": state.thread_id}}
+    # session_id groups one visitor conversation into a LangSmith thread when tracing is on
+    config = {"configurable": {"thread_id": state.thread_id},
+              "metadata": {"session_id": state.thread_id},
+              "run_name": "book_finder_turn"}
     try:
         with st.status("Working…", expanded=True) as status:
             for update in graph.stream({"messages": [HumanMessage(text)]}, config, stream_mode="updates"):
